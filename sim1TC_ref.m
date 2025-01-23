@@ -13,7 +13,7 @@ function CR = sim1TC_ref(t, nr, K1, k2)
 % OUTPUT:
 %   CR  : model-predicted reference TAC
 % 
-% AUTHOUR: Yeo-Jin Alex Yi (yeo-jin.yi.15@ucl.ac.uk)
+% AUTHOUR: Yeo-Jin Yi (yeo-jin.yi.15@ucl.ac.uk)
 
 CR = zeros(nr,1);
 
