@@ -40,8 +40,8 @@ end
 
 set(0, 'DefaultLineLineWidth', 1);
 
-for id = 1%:length(IDs)
-    for d = 1%:2 % which session?: 1 = high reward, 2 = low reward
+for id = 1:length(IDs)
+    for d = 1:2 % which session?: 1 = high reward, 2 = low reward
         if days(id,d) == 0
             
             fprintf(['\n *************\n no session %1.d data for ID %4.d\n *************\n'],d,IDs(id))
@@ -81,7 +81,7 @@ for id = 1%:length(IDs)
             break_point=find(times(:,1)>=115*60,1,'first'); %% time of activation start
             
             %%%%%%%%%%%
-            PlotStrFit=1; % show modelling plots or not (the plots are saved in a folder regardless)
+            PlotStrFit=0; % show modelling plots or not (the plots are saved in a folder regardless)
             %%%%%%%%%%%
             
             Tthr=2;
@@ -211,7 +211,39 @@ for id = 1%:length(IDs)
 
                     % ============ jarkko's original 'real SRTM' (ESRTM) ============= %
                     options = optimset('MaxFunEvals',6000, 'MaxIter',6000);
-                    weighs  = [0.25*ones(30,1); ones(t_points-30,1)];
+
+                    % let's experiment with weighting:
+
+                    % start with everything = 1:
+                    weighs = ones(t_points, 1); % initialise
+
+                    % (1) inflow frames 1..60 -> down-weight them, for example 0.25
+                    if id==31 & d==1
+                    weighs(1:9) = 0; % exclude the first few noisy frames - the earliest time points might be affected by vascular or bolus effects
+                    weighs(10:46) = 0.25;
+                    else
+                    weighs(1:9) = 0; % exclude the first few noisy frames - the earliest time points might be affected by vascular or bolus effects
+                    weighs(10:60) = 0.25;
+                    end
+
+                    % (2) Baseline frames 61..75 -> normal weight (already 1), so do nothing
+                    % weighs2(61:75) = 1.0;
+
+                    % (3) task frames 76..130 ->
+                    %       give NO weight (1) to the first 76..94
+                    %       extra weight (2) to the frames after the initial 18 frames (95..130)
+                    % “Specifically bound [18F]fallypride was rapidly displaced with haloperidol 
+                    % (1 mg/kg, intravenous) with a dissociation rate of 0.0385 min^-1 and thus 
+                    % a halftime, t_1/2 = 18 min." (Mukherjee et al., 1995, p. 13)
+                    if id==31 & d==1
+                    weighs(62:79) = 0;
+                    weighs(80:116) = 2.0;
+                    else
+                    weighs(76:94) = 0;
+                    weighs(95:130) = 2.0;
+                    end
+                    % weighs  = [0.25*ones(30,1); ones(t_points-30,1)];
+
                     fobj_srtm = @(x) norm(( ...
                         simESRTMfixk2p_1_0_0(tmidMin,reftac,t_points,x(1),x(2),x(3)*ones(t_points,1)) ...
                         - ROItac).*weighs );
@@ -252,19 +284,28 @@ for id = 1%:length(IDs)
                     weighs2 = ones(t_points, 1); % initialise
 
                     % (1) inflow frames 1..60 -> down-weight them, for example 0.25
+                    if id==31 & d==1
+                    weighs(1:9) = 0; % exclude the first few noisy frames - the earliest time points might be affected by vascular or bolus effects
+                    weighs(10:46) = 0.25;
+                    else
                     weighs2(1:9) = 0; % exclude the first few noisy frames - the earliest time points might be affected by vascular or bolus effects
                     weighs2(10:60) = 1;
+                    end
 
                     % (2) Baseline frames 61..75 -> normal weight (already 1), so do nothing
                     % weighs2(61:75) = 1.0;
 
                     % (3) task frames 76..130 ->
-                    %       give normal weight (1) to the first 76..112
-                    %       extra weight (2) to the last 18 frames 113..130
+                    %       give normal weight (1) to the first 76..94
+                    %       xtra weight (2) to the frames after the initial 18 frames (95..130)
                     % “Specifically bound [18F]fallypride was rapidly displaced with haloperidol 
                     % (1 mg/kg, intravenous) with a dissociation rate of 0.0385 min^-1 and thus 
                     % a halftime, t_1/2 = 18 min." (Mukherjee et al., 1995, p. 13)
-                    weighs2(113:130) = 2.0;
+                    if id==31 & d==1
+                    weighs2(80:116) = 2.0;
+                    else
+                    weighs2(95:130) = 2.0;
+                    end
 
                     fobj_srtm2 = @(p) norm(( ...
                        simSRTM2_1_0_0(tmidMin, reftac, t_points, k2_ref, p(1), p(2)) ...
@@ -446,7 +487,8 @@ for id = 1%:length(IDs)
                         xlabel('Time (min)');
 
                         print('-dpsc2','-append','-bestfit',fullfile(paths.figure, [ num2str(IDs(id)) num2str(d) '_TAC_Fit_SRTM2_logan_' date '_s3.ps']));
-                        savefig(fullfile(paths.figure, [ num2str(IDs(id)) num2str(d) '_' reg{1} '_TAC_Fit_SRTM2_logan_' date '_s3.fig']))
+                        mkdir([paths.figure num2str(IDs(id)) num2str(d) '_SRTM2'])
+                        savefig(fullfile(paths.figure, [ num2str(IDs(id)) num2str(d) '_SRTM2/' reg{1} '_TAC_Fit_SRTM2_logan_' date '_s3.fig']))
                         close(gcf)
                         BPdata.BP_mrtm(Subj{r})=BP;
                         BPdata.BP_srtm(Subj{r})=BP__;
@@ -481,6 +523,6 @@ end
 
 disp('done')
 
-save(['/Users/alex/Dropbox/paperwriting/MRPET/data/MRPET_BPpackage_' date '_newRecon_noPVC_SRTM2.mat'],...
+save(['/Users/alex/Dropbox/paperwriting/MRPET/data/MRPET_BPpackage_' date '_newRecon_noPVC_weightingChange_SRTM2.mat'],...
     'BPdataSave', 'BP_lp_save', 'DBP_save', 'Occupancy', 'BPND_save', 'BP_srtm_save', 'BP_srtm_Bsl_save', 'BestActivationFunction',...
     'BestModelFit', 'gamma_lp_save', 'Residuals', 'CompensatoryFunction')
