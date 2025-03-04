@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for ID in 40021 #40041 40042 40051 40052 40062 40071 40081 40082 40091 40092 40101 40102 40111 40112 40121 40122 40131 40132 40141 40142 40151 40152 40161 40162 40171 40172 40181 40182 40191 40192 40201 40202 40211 40212 40221 40222 40231 40232 40241 40242 40251 40252 40261 40262 40271 40281 40282 40292 40301 40302 40311 40312 40321 40322 40331 40332 
+for ID in 40112 #40041 40042 40051 40052 40062 40071 40081 40082 40091 40092 40101 40102 40111 40112 40121 40122 40131 40132 40141 40142 40151 40152 40161 40162 40171 40172 40181 40182 40191 40192 40201 40202 40211 40212 40221 40222 40231 40232 40241 40242 40251 40252 40261 40262 40271 40281 40282 40292 40301 40302 40311 40312 40321 40322 40331 40332 
 do
 
 	mkdir /Users/alex/Dropbox/paperwriting/MRPET/data/newseg/${ID}1
@@ -78,7 +78,7 @@ do
 	fslmaths /Users/alex/Dropbox/paperwriting/MRPET/data/newseg/${ID}1/new_cerebseg_on_pt1.nii.gz -mul /Users/alex/Dropbox/paperwriting/MRPET/data/newseg/${ID}1/cereb_mask_pt1.nii.gz /Users/alex/Dropbox/paperwriting/MRPET/data/newseg/${ID}1/new_cerebseg_pt1_labelled.nii.gz
 
 	# now, when merging, only the cerebellum area gets labelled anew
-	fslmaths /Users/alex/Dropbox/paperwriting/MRPET/data/newseg/${ID}1/aparc_no_cereb_pt1.nii.gz -add /Users/alex/Dropbox/paperwriting/MRPET/data/newseg/${ID}1/new_cerebseg_pt1_labelled.nii.gz /Users/alex/Dropbox/paperwriting/MRPET/data/newseg/${ID}1/aparc+aseg_pt1_nat_labelled_upated.nii.gz
+	fslmaths /Users/alex/Dropbox/paperwriting/MRPET/data/newseg/${ID}1/aparc_no_cereb_pt1.nii.gz -add /Users/alex/Dropbox/paperwriting/MRPET/data/newseg/${ID}1/new_cerebseg_pt1_labelled.nii.gz /Users/alex/Dropbox/paperwriting/MRPET/data/newseg/${ID}1/aparc+aseg_pt1_nat_labelled_updated.nii.gz
 
 
 
@@ -130,7 +130,7 @@ do
 
 	fslmaths /Users/alex/Dropbox/paperwriting/MRPET/data/newseg/${ID}2/new_cerebseg_on_pt2.nii.gz -mul /Users/alex/Dropbox/paperwriting/MRPET/data/newseg/${ID}2/cereb_mask_pt2.nii.gz /Users/alex/Dropbox/paperwriting/MRPET/data/newseg/${ID}2/new_cerebseg_pt2_labelled.nii.gz
 
-	fslmaths /Users/alex/Dropbox/paperwriting/MRPET/data/newseg/${ID}2/aparc_no_cereb_pt2.nii.gz -add /Users/alex/Dropbox/paperwriting/MRPET/data/newseg/${ID}2/new_cerebseg_pt2_labelled.nii.gz /Users/alex/Dropbox/paperwriting/MRPET/data/newseg/${ID}2/aparc+aseg_pt2_nat_labelled_upated.nii.gz
+	fslmaths /Users/alex/Dropbox/paperwriting/MRPET/data/newseg/${ID}2/aparc_no_cereb_pt2.nii.gz -add /Users/alex/Dropbox/paperwriting/MRPET/data/newseg/${ID}2/new_cerebseg_pt2_labelled.nii.gz /Users/alex/Dropbox/paperwriting/MRPET/data/newseg/${ID}2/aparc+aseg_pt2_nat_labelled_updated.nii.gz
 
 	echo "all done"
 done
