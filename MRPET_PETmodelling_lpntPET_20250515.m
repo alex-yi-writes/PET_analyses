@@ -19,6 +19,9 @@ addpath(genpath('/Users/alex/Dropbox/paperwriting/MRPET/scripts/modelling'))
 IDs  = [4001 4002 4003 4004 4005 4006 4007 4008 4009 4010 4011 4012 4013 4014 4015 4016 4017 4018 4019 4020 4021 4022 4023 4024 4025 4026 4027 4028 4029 4030 4031 4032 4033];
 days = [1 2; 1 2; 1 0; 1 2; 1 2; 0 2; 1 0; 1 2; 0 2; 1 2; 1 2; 1 2; 1 2; 1 2; 1 2; 1 2; 1 2; 1 2; 1 2; 1 2; 1 2; 1 2; 1 2; 1 2; 1 2; 1 2; 1 0; 1 2; 0 2; 1 2; 1 2; 1 2; 1 2];
 
+% etc
+settledownFrames=0;
+
 %% load TACs for modelling
 
 for i1 = 1:length(IDs)
@@ -39,6 +42,7 @@ end
 %  because 55 ROIs are too many
 
 set(0, 'DefaultLineLineWidth', 1);
+set(gca,'FontSize',10)
 Occ_dyn = cell(length(IDs), 2);
 for id = 1:length(IDs)
     for d = 1:2
@@ -78,6 +82,7 @@ for id = 1:length(IDs)
             t_points = numel(tmid);                                        % total number of frames
             dtMin    = [tmidMin(1); diff(tmidMin)];  % *** minutes!!!!***  % frame duration (min) computed from midtimes
             break_point = find(times(:,1)>=115*60,1,'first'); %% time of activation start (>=115 min which is task onset for us) %%
+            % break_point = break_point+settledownFrames;
 
             %%%%%%%%%%%%%%%
             PlotStrFit = 0; % plotting can be really annoying if you're trying to do something in parallel
@@ -96,11 +101,12 @@ for id = 1:length(IDs)
                         figure('Position',[100 100 800 1200],'Visible','on'); hold on; spidx=1;
                     end
                     reftac=TACDATA.CerC;                                   % ref (cerebellar cortex) TAC
+                    reftac=reftac(:);
 
                     mreftac  = [reftac(1)/2; (reftac(2:end)+reftac(1:end-1))/2]; % mid-frame refs for trapezoidal integration
 
                     %% construct linear SRTM design matrix
-                    %  later lscov(A, ROItac) solves Aθ=Cᵗ(t) to give θ=[R₁ k₂ k₂a]
+                    %  later lscov(A, ROItac) solves Aθ=Cᵗ(t) to give θ=[R1 k2 k2a]
 
                     ASRTM = zeros(t_points ,3);                            % preallocate A matrix (rows = frames, cols = regressors)
                     ASRTM(:,1)  = reftac;                                  % reg 1: instantaneous Cʳ(t): radioactivity concentration in ref tissue (CerC) at time t
@@ -134,8 +140,11 @@ for id = 1:length(IDs)
                         case 'LC',   ROItac=TACDATA.LC;   savestr='LC';
                         case 'VTA',  ROItac=TACDATA.VTA;  savestr='VTA';
                     end
+                    ROItac=ROItac(:);
 
                     mROItac  = [ROItac(1)/2; (ROItac(2:end)+ROItac(1:end-1))/2]; % mid-frame target ROI vals
+                    taskFrames = length(TACs{id,d}.TACDATA_Task.(reg{1}).Bilateral.tac);
+                    baselinetaskFrames = length(TACs{id,d}.TACDATA_Baseline.(reg{1}).Bilateral.tac)+length(TACs{id,d}.TACDATA_Task.(reg{1}).Bilateral.tac);
 
                     ASRTM(:,3)=zeros(t_points,1);                          % init 3rd regressor
                     for k = 1:t_points
@@ -159,7 +168,7 @@ for id = 1:length(IDs)
 
                     %% non-linear SRTM fit (whole scan)
                     options = optimset('MaxFunEvals',3e5,'MaxIter',3e5);% config optimisation budget for fminsearch
-                    weighs = [0.25*ones(30,1); ones(t_points-30,1)];       % weights (down-weight early inflow frames that are noisy)
+                    weighs = [0.25*ones(30,1); ones(t_points-30,1)];%[0.25*ones(30,1); ones(t_points-30,1)];       % weights (down-weight early inflow frames that are noisy)
 
                     fobj = @(x) norm((simESRTMfixk2p_1_0_0(...
                         tmidMin,reftac,t_points,x(1),x(2),x(3)*ones(t_points,1))-ROItac).*weighs);
@@ -173,8 +182,8 @@ for id = 1:length(IDs)
 
                     %% nonlinear SRTM fit (baseline only)
                     fobj = @(x) norm((simESRTMfixk2p_1_0_0(...
-                        tmidMin(1:end-55),reftac(1:end-55),t_points-55,x(1),x(2),x(3)*ones(t_points-55,1)) ...
-                        -ROItac(1:end-55)).*weighs(1:end-55));
+                        tmidMin(1:end-taskFrames),reftac(1:end-taskFrames),t_points-taskFrames,x(1),x(2),x(3)*ones(t_points-taskFrames,1)) ...
+                        -ROItac(1:end-taskFrames)).*weighs(1:end-taskFrames));
 
                     % [parest_srtm,~] =
                     % fminsearch(@(x)fobj(x),[R1__,k2__,BP__],options); % maybe this is better informed?? 
@@ -247,8 +256,8 @@ for id = 1:length(IDs)
                     % end
 
                     y=-ASRTM(:,3)./ROItac; x=ASRTM(:,2)./ROItac;           % logan coordinates
-                    [pp,~] = polyfit(x(end-55:end),y(end-55:end),1);       % task slope -> BP_task_Logan
-                    [pp2,~]= polyfit(x(end-70:end-55),y(end-70:end-55),1); % baseline slope -> BP_base_Logan
+                    [pp,~] = polyfit(x(end-taskFrames:end),y(end-taskFrames:end),1);       % task slope -> BP_task_Logan
+                    [pp2,~]= polyfit(x(end-baselinetaskFrames:end-taskFrames),y(end-baselinetaskFrames:end-taskFrames),1); % baseline slope -> BP_base_Logan
 
                     %% compute final metrics
 
@@ -306,6 +315,9 @@ for id = 1:length(IDs)
                     BPdataSave{id,d}.(reg{1}).DeltaBP_gamma=DeltaBP;
                     BPdataSave{id,d}.(reg{1}).Occ_peak=Occ_peak;
                     BPdataSave{id,d}.(reg{1}).dynBP_AUC=AUC_BP_trap;
+                    BPdataSave{id,d}.(reg{1}).DeltaBP_ESRTM = DeltaBP_ESRTM;
+                    BPdataSave{id,d}.(reg{1}).Occ_ESRTM     = Occ_ESRTM;
+
 
                     BPdata.BP_mrtm(Subj{r})   = BP;
                     BPdata.BP_srtm(Subj{r})   = BP__;
@@ -350,9 +362,9 @@ for id = 1:length(IDs)
                         subplot(3,2,4);
                         y=-ASRTM(:,3)./ROItac;
                         x=ASRTM(:,2)./ROItac;
-                        [pp ss]=polyfit(x(end-55:end),y(end-55:end),1);
-                        [pp2 ss2]=polyfit(x(end-70:end-55),y(end-70:end-55),1);
-                        plot(x,y,'ko',x(end-70:end),polyval(pp,x(end-70:end)),'k-',x(end-70:end),polyval(pp2,x(end-70:end)),'k--');
+                        [pp ss]=polyfit(x(end-taskFrames:end),y(end-taskFrames:end),1);
+                        [pp2 ss2]=polyfit(x(end-baselinetaskFrames:end-taskFrames),y(end-baselinetaskFrames:end-taskFrames),1);
+                        plot(x,y,'ko',x(end-baselinetaskFrames:end),polyval(pp,x(end-baselinetaskFrames:end)),'k-',x(end-baselinetaskFrames:end),polyval(pp2,x(end-baselinetaskFrames:end)),'k--');
                         title(['Logan fit: BP(Baseline)=' num2str(pp2(1)-1,'%1.2f') ' BP(Task)=' num2str(pp(1)-1,'%1.2f') ]);
                         xlabel(['\int REF/ROI']);
                         ylabel('\int ROI/ROI')
@@ -361,6 +373,8 @@ for id = 1:length(IDs)
                         xlim([0 190]); %ylim([0.5 30]);
                         title('Target to reference ratio');
                         xlabel('Time (min)');
+
+                        set(findall(gcf,'-property','FontSize'),'FontSize',12);
 
                         print('-dpsc2','-append','-bestfit',fullfile(paths.figure, [ num2str(IDs(id)) num2str(d) '_TAC_Fit_lpntpet_logan_' date '_s3.ps']));
                         close(gcf)
@@ -374,7 +388,7 @@ for id = 1:length(IDs)
             keep IDs days paths id d TACs BPdata BP_lp_save BPdataSave ...
                 DBP_save Occupancy BPND_save BP_srtm_save BP_srtm_Bsl_save ...
                 BestActivationFunction BestModelFit gamma_lp_save Residuals ...
-                CompensatoryFunction PlotStrFit Occ_dyn
+                CompensatoryFunction PlotStrFit Occ_dyn rssLP rssSRTM
 
         end    % close session conditional
     end        % close session loop
@@ -383,7 +397,7 @@ end            % closse subject loop
 disp('done')
 
 save(['/Users/alex/Dropbox/paperwriting/MRPET/data/MRPET_BPpackage_condensed_' ...
-    date '_newRecon_noPVC_laterBreakpoint.mat'],...
+    date '_newRecon_noPVC.mat'],...
     'BPdataSave','BP_lp_save','DBP_save','Occupancy','BPND_save',...
     'BP_srtm_save','BP_srtm_Bsl_save','BestActivationFunction',...  
     'BestModelFit','gamma_lp_save','Residuals','CompensatoryFunction')
@@ -443,15 +457,17 @@ ROIs = {'Amy','Caud','Hipp','LC','Nac','Put','SN','ThalProp', ...
         'VTA'};
 
 metricMap = { ...
-% structure-field inside ROI        desired column-stub
+%   ROIfield        column stub
    'BP_srtm_bl'     ,'BPbsl_SRTM'      ; ...
    'BP_srtm'        ,'BPtask_SRTM'     ; ...
    'BP_lpnt'        ,'BPbsl_lpnt'      ; ...
+   'Occ_ESRTM'      ,'Occupancy_ESRTM' ; ...
+   'DeltaBP_ESRTM'  ,'DeltaBP_ESRTM'   ; ...
    'gamma'          ,'Gamma'           ; ...
    'dynBP_AUC'      ,'dynBP_AUC'       ; ...
    'Occ_peak'       ,'Occupancy_lpnt'  };
 
-sessionTag = {'highDA','lowDA'};   % day==1 → high, day==2 → low
+sessionTag = {'highDA','lowDA'};   % day=1 high / day=2 low
 
 colNames = {};
 for m = 1:size(metricMap,1)
@@ -490,13 +506,156 @@ for s = 1:nSubj                                 % loop subjects
 end
 
 T = array2table(values, ...
-        'RowNames',     cellstr(num2str(IDs(:))), ...
+        'ID',     cellstr(num2str(IDs(:))), ...
         'VariableNames',colNames);
 
 outFile = ['/Users/alex/Dropbox/paperwriting/MRPET/data/MRPET_BPtable_condensedROIs_noPVC_' date '.xlsx'];
 writetable(T,outFile,'WriteRowNames',true);
 fprintf('excel sheet written:  %s\n',outFile);
 
+
+%% save: baseline only
+
+% load(['/Users/alex/Dropbox/paperwriting/MRPET/data/MRPET_BPpackage_condensed_16-May-2025_newRecon_noPVC.mat'], ...
+%      'BPdataSave','IDs','days');       % bring only what we need
+
+ROIs = {'Amy','Caud','Hipp','LC','Nac','Put','SN','ThalProp', ...
+        'VTA'};
+
+metricMap = { ...
+%   ROIfield        column stub
+   'BP_srtm_bl'     ,'BPbsl_SRTM'      ; ...
+   % 'BP_srtm'        ,'BPtask_SRTM'     ; ...
+   'BP_lpnt'        ,'BPbsl_lpnt'      }; ...
+   % 'gamma'          ,'Gamma'           ; ...
+   % 'dynBP_AUC'      ,'dynBP_AUC'       ; ...
+   % 'Occ_peak'       ,'Occupancy_lpnt'  };
+
+sessionTag = {'highDA','lowDA'};   % day=1 high / day=2 low
+
+colNames = {};
+for m = 1:size(metricMap,1)
+    stub = metricMap{m,2};
+    for r = 1:numel(ROIs)
+        for d = 1:2
+            colNames{end+1} = sprintf('%s_%s_%s',stub,ROIs{r},sessionTag{d});
+        end
+    end
+end
+nCol   = numel(colNames);
+nSubj  = numel(IDs);
+values = NaN(nSubj,nCol);           
+
+for s = 1:nSubj                                 % loop subjects
+    for d = 1:2                                 % loop sessions
+        if days(s,d)==0, continue, end          % skip if session missing
+
+        baseOffset = (d-1);   % 0 for high, 1 for low — used in column index
+
+        for r = 1:numel(ROIs)
+            ROI = ROIs{r};
+            ROIstruct = BPdataSave{s,d}.(ROI);
+
+            for m = 1:size(metricMap,1)
+                fld  = metricMap{m,1};
+                stub = metricMap{m,2};
+
+                if isfield(ROIstruct,fld)
+                    col = (m-1)*numel(ROIs)*2 + (r-1)*2 + baseOffset + 1;
+                    values(s,col) = ROIstruct.(fld);
+                end
+            end
+        end
+    end
+end
+
+T = array2table(values, ...
+        'ID',     cellstr(num2str(IDs(:))), ...
+        'VariableNames',colNames);
+
+outFile = ['/Users/alex/Dropbox/paperwriting/MRPET/data/MRPET_BPbsl_condensedROIs_noPVC_' date '.xlsx'];
+writetable(T,outFile,'WriteRowNames',true);
+fprintf('excel sheet written:  %s\n',outFile);
+
+%% remove outliers
+
+
+for foldcomments=1
+
+clear dataTable
+clc;
+
+filename='MRPET_BPbsl_condensedROIs_noPVC_16-May-2025';
+
+dataTable = readtable(['/Users/alex/Dropbox/paperwriting/MRPET/data/' filename '.xlsx' ]);
+
+% Assuming dataTable is your table
+[numRows, numCols] = size(dataTable);
+
+% Loop over each variable (column) in the table
+for col = 2:numCols
+    dataColumn = dataTable{:, col};
+    
+    % Variable to count the number of outliers
+    numOutliers = 0;
+
+    % Check if the column contains numeric data
+    if isnumeric(dataColumn)
+        
+        clear k1 k2 k3
+        
+        % Calculate Q1 and Q3
+        Q1 = quantile(dataColumn, 0.25);
+        Q3 = quantile(dataColumn, 0.75);
+
+        % Calculate IQR
+        IQR = Q3 - Q1;
+
+        % Calculate lower and upper bounds
+        lowerBound = Q1 - 1.5 * IQR;
+        upperBound = Q3 + 1.5 * IQR;
+
+        % Count the number of outliers below the lower bound
+        numOutliers = numOutliers + sum(dataColumn < lowerBound);
+        k1=find(dataColumn < lowerBound);
+        
+        % Replace outliers below the lower bound with NaN
+        dataColumn(dataColumn < lowerBound) = NaN;
+
+        % Count the number of outliers above the upper bound
+        numOutliers = numOutliers + sum(dataColumn > upperBound);
+        k2=find(dataColumn > upperBound);
+        
+        % Replace outliers above the upper bound with NaN
+        dataColumn(dataColumn > upperBound) = NaN;
+
+        % Replace the original column with the updated column
+        dataTable{:, col} = dataColumn;
+        
+        % Display the number of outliers for this variable
+        if numOutliers==0
+        else
+            k3=[k1;k2];
+            disp('***')
+            fprintf('Variable %s had %d outliers.\n', dataTable.Properties.VariableNames{col}, numOutliers);
+            
+%             try
+                disp(strcat('subject number: ', cellstr(num2str(k3))))
+%             catch
+%                 disp(['subject number: ' num2str(k3(1)) ])
+%             end
+            
+        end
+    end
+end
+
+writetable(dataTable, ['/Users/alex/Dropbox/paperwriting/MRPET/data/' filename '_outlierRemoved.xlsx'], 'Sheet', 'Cleaned Data');
+
+end
+% data_original=data;
+% data=dataTable;
+
+disp('done')
 
 %% fx
 
