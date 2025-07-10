@@ -974,39 +974,6 @@ end
 
 disp('done')
 
-%% 
-
-filename = 'MRPET_BPchange_ESRTM_condensedROIs_noPVC_13-Jun-2025';
-in  = ['/Users/alex/Qumulo/IKND/Alex/paperwriting/MRPET/data/' filename '.xlsx'];
-out = ['/Users/alex/Qumulo/IKND/Alex/paperwriting/MRPET/data/' filename '_MADclean.xlsx'];
-
-clc
-
-thr = 4;                                 % raise to 4-5 if this is still too strict
-
-T           = readtable(in);
-totalFlagged = 0;
-
-for c = 2:width(T)                       % skip ID column
-    if isnumeric(T{:,c})
-        colmask = isoutlier(T{:,c},'median','ThresholdFactor',thr);
-        idx     = find(colmask);
-        if ~isempty(idx)
-            totalFlagged = totalFlagged + numel(idx);
-            fprintf('\n%s – %d outlier(s)\n',T.Properties.VariableNames{c},numel(idx));
-            disp(table(idx,T{idx,1},T{idx,c}, ...
-                'VariableNames',{'RowIdx','SubjectID','Value'}))
-            T{idx,c} = NaN;              % safe assignment
-        end
-    end
-end
-
-fprintf('\nTotal outliers flagged: %d\n',totalFlagged);
-writetable(T,out,'Sheet','Cleaned Data');
-disp done
-
-
-
 %% fx
 
 % ======================================================== %
