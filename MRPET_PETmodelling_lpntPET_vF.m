@@ -184,9 +184,9 @@ for id = 1:length(IDs)
                     % APPROACH 2 (simplest, this one works best for now)
 
                     if IDs(id)==4011 && d==2 % this ID fails with different weighting
-                    weighs = [0.25*ones(32,1); ones(t_points-32,1)];
+                    weighs = [0.25*ones(12,1); ones(t_points-12,1)];
                     else
-                    weighs = [0.25*ones(30,1); ones(t_points-30,1)];
+                    weighs = [0.25*ones(10,1); ones(t_points-10,1)];
                     end
                     % weighs = [0.25*ones(30,1); ones(t_points-30,1)];%[0.25*ones(30,1); ones(t_points-30,1)];       % weights (down-weight early inflow frames that are noisy)
                     
