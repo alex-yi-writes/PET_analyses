@@ -902,8 +902,7 @@ end
 %    (uses lsqlin nearly same to lscov)
 % ---------------------------------------------------------
 function [pars,fit] = lpntpetBound(A,y,k2a)
-
-% why is it 0.1765 cap here?: from Reccardi et al. (2006) "Greatest 
+% why is it 0.1765 cap here?: from Riccardi et al. (2006) "Greatest 
 % displacements were seen in striatal subdivisions - 5.6% in caudate, 11.2% 
 % in putamen, 7.2% in ventral striatum, and 6.6% in substantia nigra. 
 % Lesser decrements were seen in amygdala - 4.4%, temporal cortex - 3.7%, 
