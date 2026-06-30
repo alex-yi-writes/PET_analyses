@@ -783,10 +783,8 @@ filename='MRPET_BPchange_ESRTM_condensedROIs_noPVC_13-Jun-2025';
 
 dataTable = readtable(['/Users/alex/Dropbox/paperwriting/MRPET/data/' filename '.xlsx' ]);
 
-% Assuming dataTable is your table
 [numRows, numCols] = size(dataTable);
 
-% Loop over each variable (column) in the table
 for col = 2:numCols
     dataColumn = dataTable{:, col};
     
