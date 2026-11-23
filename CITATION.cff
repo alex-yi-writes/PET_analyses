@@ -6,10 +6,8 @@ authors:
   - given-names: Yeo-Jin Alex
     family-names: Yi
     email: yeo-jin.yi@med.ovgu.de
-    affiliation: "Institute of Cognitive Neurology and Dementia Research,
-      Otto-von-Guericke University Magdeburg, Germany"
+    affiliation: "Institute of Cognitive Neurology and Dementia Research, Otto-von-Guericke University Magdeburg, Germany"
     orcid: "https://orcid.org/0000-0001-9904-6284"
-license: PolyForm Noncommercial License 1.0.0
 repository-code: "https://github.com/alex-yi-writes/PET_analyses"
 version: 1.0.0
-date-released: 2026-11-23
+date-released: "2026-11-23"
