@@ -1,13 +1,9 @@
-cff-version: 1.2.0
-title: "Analysis code for Dopaminergic subsystems show region-specific links to episodic memory in healthy older adults"
-message: "If you use this code, please cite it using these metadata."
-type: software
+cff-version: 1.1.0
+message: "If you use this software, please cite it as below."
 authors:
-  - given-names: Yeo-Jin Alex
-    family-names: Yi
-    email: yeo-jin.yi@med.ovgu.de
-    affiliation: "Institute of Cognitive Neurology and Dementia Research, Otto-von-Guericke University Magdeburg, Germany"
-    orcid: "https://orcid.org/0000-0001-9904-6284"
-repository-code: "https://github.com/alex-yi-writes/PET_analyses"
-version: 1.0.0
-date-released: "2026-11-23"
+- family-names: Yi
+  given-names: Yeo-Jin
+orcid: https://orcid.org/0000-0001-9904-6284
+title: "Analysis code for Dopaminergic subsystems show region-specific links to episodic memory in healthy older adults"
+version: v1.0.0
+date-released: 2026-11-23
